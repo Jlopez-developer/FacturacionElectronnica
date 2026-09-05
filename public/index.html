@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mi Colmado - Sistema de Facturación</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23f5b43b'/%3E%3Ctext x='50%25' y='56%25' font-size='38' text-anchor='middle' dominant-baseline='middle'%3E%F0%9F%A7%BA%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <!-- Pantalla de acceso -->
+  <div id="login" class="login" hidden>
+    <form class="login-card" id="login-form" autocomplete="on">
+      <div class="login-logo"><span class="logo-icon">🧺</span><div><div class="logo-title">Mi Colmado</div><div class="logo-sub">Sistema de Facturación</div></div></div>
+      <h1>Iniciar sesión</h1>
+      <p class="muted">Ingrese sus credenciales para continuar</p>
+      <label>Usuario<input name="usuario" required autofocus autocomplete="username" placeholder="admin"></label>
+      <label>Contraseña<input name="clave" type="password" required autocomplete="current-password" placeholder="••••••••"></label>
+      <div id="login-error" class="form-error" hidden></div>
+      <button class="btn btn-primary btn-block" type="submit">Entrar</button>
+      <p class="muted small center">Usuario inicial: <b>admin</b> / <b>admin123</b></p>
+    </form>
+  </div>
+
+  <!-- Aplicación -->
+  <div id="app" class="app" hidden>
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <span class="logo-icon">🧺</span>
+        <div><div class="logo-title">Mi Colmado</div><div class="logo-sub">Sistema de Facturación</div></div>
+      </div>
+      <nav class="nav" id="nav"></nav>
+      <div class="caja-widget" id="caja-widget"></div>
+    </aside>
+    <div class="main">
+      <header class="topbar">
+        <button class="icon-btn" id="btn-menu" title="Menú" aria-label="Menú"></button>
+        <div class="page-title"><h1 id="page-title">Dashboard</h1><p id="page-subtitle">Resumen general de tu negocio</p></div>
+        <div class="topbar-right">
+          <button class="btn btn-outline" id="btn-ayuda"><span class="i" data-icon="help"></span>Ayuda</button>
+          <div class="user-menu" id="user-menu">
+            <span class="avatar" data-icon="user-circle"></span>
+            <div class="user-info"><div class="user-name" id="user-name">admin</div><div class="user-role" id="user-role">Administrador</div></div>
+            <span class="i" data-icon="chevron-down"></span>
+            <div class="dropdown" id="user-dropdown" hidden>
+              <button data-action="clave">Cambiar contraseña</button>
+              <button data-action="salir">Cerrar sesión</button>
+            </div>
+          </div>
+        </div>
+      </header>
+      <main class="content" id="content"></main>
+      <footer class="footer" id="footer">© <span id="footer-year"></span> Mi Colmado - Sistema de Facturación Electrónica | Fácil, rápido y seguro.</footer>
+    </div>
+  </div>
+
+  <div id="modal-root"></div>
+  <div id="toast-root" class="toast-root"></div>
+
+  <script src="/js/icons.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/ui.js"></script>
+  <script src="/js/pages/dashboard.js"></script>
+  <script src="/js/pages/facturacion.js"></script>
+  <script src="/js/pages/productos.js"></script>
+  <script src="/js/pages/clientes.js"></script>
+  <script src="/js/pages/ventas.js"></script>
+  <script src="/js/pages/compras.js"></script>
+  <script src="/js/pages/gastos.js"></script>
+  <script src="/js/pages/reportes.js"></script>
+  <script src="/js/pages/caja.js"></script>
+  <script src="/js/pages/usuarios.js"></script>
+  <script src="/js/pages/configuracion.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "name": "mi-colmado-facturacion",
+  "version": "1.0.0",
+  "description": "Sistema de Facturación Electrónica para colmados, integrado con la DGII (e-CF)",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "seed": "node server/seed.js",
+    "test": "node --test test/*.test.js"
+  },
+  "engines": { "node": ">=20" },
+  "license": "MIT",
+  "dependencies": {
+    "better-sqlite3": "^12.2.0",
+    "express": "^5.1.0",
+    "multer": "^2.0.2",
+    "node-forge": "^1.3.1",
+    "qrcode": "^1.5.4",
+    "xml-crypto": "^6.1.2"
+  }
+}
