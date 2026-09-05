@@ -215,6 +215,13 @@ const DEFAULT_CONFIG = {
   dgii_cert_vence: '',
   dgii_token: '',
   dgii_token_expira: '',
+  dgii_url_base: '',                   // opcional: sobrescribe la URL del ambiente (ej. https://ecf.dgii.gov.do/testecf)
+  dgii_url_fc: '',                     // opcional: sobrescribe la URL de recepción FC
+  dgii_ultima_prueba: '',
+  dgii_ultima_prueba_ok: '',
+  dgii_ultima_prueba_msg: '',
+  config_completada: '0',
+  config_paso: '0',
   // Impresión
   impresora_tipo: 'navegador',          // navegador | red (ESC/POS 9100)
   impresora_ip: '',

@@ -26,6 +26,22 @@ también existen `cajero` / `cajero123` y `supervisor` / `super123`.
 Variables opcionales: `PORT` (3000), `DATA_DIR` (carpeta de la base de datos y certificados),
 `ADMIN_PASSWORD` (clave del admin inicial).
 
+## Puesta en marcha (asistente de configuración)
+
+Al entrar por primera vez como administrador, el sistema abre el **asistente de puesta en marcha**
+(también disponible en **Configuración → Asistente de puesta en marcha** o en `#/asistente`). En 5 pasos deja todo listo:
+
+1. **Negocio**: nombre comercial, razón social, RNC (se valida el dígito verificador), dirección, teléfono.
+2. **DGII**: modo (e-CF, NCF tradicional o sin comprobantes), ambiente (TesteCF / CerteCF / eCF), carga del
+   certificado digital `.p12` con su contraseña, URLs de los servicios (opcional, por si la DGII las cambia) y
+   **Probar conexión**, que solicita la semilla, la firma y obtiene el token real de la DGII.
+3. **Comprobantes**: rangos de e-NCF autorizados (desde, hasta, vencimiento) por tipo: 32 consumo, 31 crédito fiscal, 34 nota de crédito, etc.
+4. **Impresión**: impresora (navegador o térmica de red), ancho de papel, cajón de dinero y pie del ticket, con ticket de ejemplo.
+5. **Usuarios**: cambio de la contraseña inicial del administrador y alta de cajeros.
+
+El paso final muestra un **checklist** con lo que falta. El dashboard muestra un aviso hasta que todo esté completo,
+y la API expone el estado en `GET /api/configuracion/estado`.
+
 ## Módulos
 
 | Módulo | Qué hace |
@@ -56,13 +72,15 @@ Flujo implementado en `server/dgii/`:
 5. **Reintentos**: los e-CF no enviados o con error se reintentan cada 10 minutos y desde **Ventas → Reenviar pendientes**.
 6. **Ticket**: representación impresa con e-NCF, código de seguridad, fecha de firma y **QR** con la URL de consulta de la DGII (`ConsultaTimbre` / `ConsultaTimbreFC`).
 
-### Pasos para el dueño del colmado
+### Lo que el dueño del colmado debe conseguir (fuera del sistema)
 
-1. Obtener un **certificado digital** de una entidad autorizada por la DGII (por ejemplo la Cámara de Comercio o Avansi) y cargarlo en **Configuración → DGII** junto con su contraseña.
-2. Registrar el **RNC** y la razón social en **Configuración → Negocio**.
-3. Solicitar en la Oficina Virtual de la DGII los rangos de **e-NCF** y registrarlos en **Configuración → Secuencias e-NCF**.
-4. Probar en el ambiente **TesteCF**, completar la certificación en **CerteCF** y finalmente cambiar a **eCF** (producción).
-5. Mientras se completa ese proceso, el sistema puede operar en modo **NCF tradicional** (B01/B02) desde **Configuración → DGII → Modo**.
+1. Un **certificado digital** para facturación electrónica, emitido a nombre del contribuyente por una entidad
+   autorizada por la DGII (Cámara de Comercio de Santo Domingo, Avansi, etc.). Se entrega como archivo `.p12` con contraseña.
+2. Estar inscrito como emisor de e-CF en la Oficina Virtual de la DGII y solicitar allí los rangos de **e-NCF**.
+3. Pasar la **certificación** de la DGII: se prueba en TesteCF, se completa el set de pruebas en CerteCF y la DGII habilita eCF (producción).
+
+Todo lo demás se configura desde el asistente. Mientras se completa ese proceso, el sistema puede operar en modo
+**NCF tradicional** (B01/B02) desde el paso DGII del asistente.
 
 Sin certificado cargado, las facturas se emiten igual y el XML queda pendiente de firma y envío; el estado se ve en **Ventas**.
 

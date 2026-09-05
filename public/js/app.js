@@ -14,6 +14,7 @@
     ['usuarios', 'Usuarios', 'user', 'Usuarios y roles'],
     ['configuracion', 'Configuración', 'settings', 'Negocio, DGII e impresión'],
   ];
+  const EXTRA = { asistente: ['Puesta en marcha', 'Configure el sistema y empiece a facturar', 'configuracion'] };
   const ROLES = { administrador: 'Administrador', supervisor: 'Supervisor', cajero: 'Cajero' };
   const state = { user: null, caja: null };
   window.APP = state;
@@ -25,7 +26,9 @@
   }
   function setActive(page) {
     document.querySelectorAll('#nav a').forEach((a) => a.classList.toggle('active', a.dataset.page === page));
-    const n = NAV.find((x) => x[0] === page) || NAV[0];
+    const ex = EXTRA[page];
+    if (ex) document.querySelectorAll('#nav a').forEach((a) => a.classList.toggle('active', a.dataset.page === ex[2]));
+    const n = ex ? [page, ex[0], '', ex[1]] : (NAV.find((x) => x[0] === page) || NAV[0]);
     $('#page-title').textContent = n[1];
     $('#page-subtitle').textContent = n[3];
     document.title = `${n[1]} - Mi Colmado`;
@@ -76,6 +79,8 @@
     if (window.APP_CONFIG.negocio_nombre) { document.querySelectorAll('.logo-title').forEach((e) => (e.textContent = window.APP_CONFIG.negocio_nombre)); $('#footer').innerHTML = `© ${new Date().getFullYear()} ${esc(window.APP_CONFIG.negocio_nombre)} - Sistema de Facturación Electrónica | ${esc(window.APP_CONFIG.negocio_eslogan || 'Fácil, rápido y seguro.')}`; }
     renderNav();
     await refreshCaja();
+    // Primera vez: llevar al administrador al asistente de puesta en marcha
+    if (user.rol === 'administrador' && window.APP_CONFIG.config_completada !== '1' && (!location.hash || location.hash === '#/dashboard')) location.hash = '#/asistente';
     route();
   }
 

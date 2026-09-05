@@ -23,7 +23,12 @@ function ambiente() {
   const a = getConfig('dgii_ambiente', 'TesteCF');
   return HOSTS[a] ? a : 'TesteCF';
 }
-const urls = () => HOSTS[ambiente()];
+const urls = () => {
+  const h = HOSTS[ambiente()];
+  const base = (getConfig('dgii_url_base') || '').trim().replace(/\/+$/, '');
+  const fc = (getConfig('dgii_url_fc') || '').trim().replace(/\/+$/, '');
+  return { base: base || h.base, fc: fc || h.fc };
+};
 const TIMEOUT = 30000;
 
 async function http(url, opts = {}) {

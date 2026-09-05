@@ -289,6 +289,31 @@ pre.xml { background: #0f172a; color: #e2e8f0; padding: 14px; border-radius: 8px
 .suggest button:hover { background: #f3f4f6; }
 .rel { position: relative; }
 
+/* ---------- Asistente de puesta en marcha ---------- */
+.setup-banner { display: flex; align-items: center; gap: 14px; background: #fffbeb; border: 1px solid #fde68a; color: #78350f; border-radius: 10px; padding: 12px 16px; margin-bottom: 14px; font-size: 14px; }
+.setup-banner .sb-icon { width: 36px; height: 36px; border-radius: 50%; background: #fde68a; display: inline-flex; align-items: center; justify-content: center; color: #92400e; flex-shrink: 0; }
+.setup-banner > div { flex: 1; }
+.wizard { max-width: 1100px; margin: 0 auto; }
+.wizard-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+.wizard-head h1 { font-size: 24px; letter-spacing: -.3px; }
+.wizard-head p { margin: 4px 0 0; }
+.wizard-progress { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.wizard-steps { display: flex; align-items: center; margin-bottom: 16px; overflow-x: auto; padding: 4px 0; }
+.wstep { display: inline-flex; align-items: center; gap: 8px; border: 0; background: none; color: var(--muted); font-weight: 500; padding: 6px 8px; border-radius: 8px; white-space: nowrap; }
+.wstep .wnum { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #d1d5db; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; background: #fff; }
+.wstep.done .wnum { background: var(--green); border-color: var(--green); color: #fff; }
+.wstep.active { color: var(--primary); }
+.wstep.active .wnum { border-color: var(--primary); color: var(--primary); }
+.wstep.active.done .wnum { background: var(--primary); border-color: var(--primary); color: #fff; }
+.wline { flex: 1; height: 2px; background: #e5e7eb; min-width: 16px; }
+.wizard-body h2 { font-size: 20px; margin-bottom: 6px; }
+.wizard-body > .card-body > p.muted { margin: 0 0 18px; font-size: 14px; line-height: 1.5; }
+.wizard-nav { display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--border); background: #fafbfc; border-radius: 0 0 var(--radius) var(--radius); }
+.wizard-nav .spacer { flex: 1; }
+.wcheck { width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: #fee2e2; color: #b91c1c; }
+.wcheck.ok { background: #dcfce7; color: #15803d; }
+.wizard .card .card { box-shadow: none; }
+
 /* ---------- Modal / Toast ---------- */
 .modal-back { position: fixed; inset: 0; background: rgba(15,23,42,.45); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
 .modal { background: #fff; border-radius: 14px; width: 100%; max-width: 560px; max-height: calc(100vh - 40px); display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,.25); }

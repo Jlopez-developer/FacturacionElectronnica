@@ -10,8 +10,37 @@ const firma = require('../dgii/firma');
 const cliente = require('../dgii/cliente');
 const dgii = require('../dgii');
 const ncf = require('../dgii/ncf');
+const { validarRNC } = require('../dgii/rnc');
 const r = express.Router();
 const admin = requireRole('administrador');
+
+/** Checklist de puesta en marcha: qué falta para facturar electrónicamente. */
+function estadoConfiguracion() {
+  const cfg = allConfig();
+  const modo = cfg.dgii_modo || 'electronico';
+  const electronico = modo === 'electronico';
+  let cert = null, certError = null;
+  try { cert = firma.obtenerCertificado(); } catch (e) { certError = e.message; }
+  const seq = (t) => { const s = db.prepare('SELECT * FROM secuencias_ecf WHERE tipo = ?').get(t); return s ? { ...s, disponibles: ncf.disponibles(t), vencida: !!(s.vence && new Date(s.vence + 'T23:59:59') < new Date()) } : null; };
+  const requeridas = electronico ? ['32', '31', '34'] : modo === 'tradicional' ? ['B02', 'B01', 'B04'] : [];
+  const seqs = requeridas.map(seq).filter(Boolean);
+  const seqOk = modo === 'ninguno' || (seqs.length === requeridas.length && seqs.every((x) => x.activo && x.disponibles > 0 && !x.vencida));
+  const rncOk = validarRNC(cfg.negocio_rnc || '');
+  const usuarios = db.prepare('SELECT COUNT(*) n FROM usuarios WHERE activo = 1').get().n;
+  const adminClaveDefecto = (() => { const u = db.prepare("SELECT clave_hash FROM usuarios WHERE usuario = 'admin'").get(); return u ? verifyPassword('admin123', u.clave_hash) : false; })();
+  const pasos = [
+    { id: 'negocio', titulo: 'Datos del negocio', ok: !!(cfg.negocio_nombre && cfg.negocio_razon_social && rncOk && cfg.negocio_direccion), detalle: !cfg.negocio_rnc ? 'Falta el RNC' : !rncOk ? 'El RNC no es válido' : !cfg.negocio_razon_social ? 'Falta la razón social' : !cfg.negocio_direccion ? 'Falta la dirección' : 'Completo' },
+    { id: 'dgii', titulo: 'Conexión con la DGII', ok: !electronico || (!!cert && cert.notAfter > new Date() && cfg.dgii_ultima_prueba_ok === '1'), detalle: !electronico ? (modo === 'tradicional' ? 'Modo NCF tradicional (sin envío electrónico)' : 'Sin comprobantes fiscales') : certError ? `Certificado con error: ${certError}` : !cert ? 'Falta cargar el certificado digital (.p12)' : cert.notAfter < new Date() ? 'El certificado está vencido' : cfg.dgii_ultima_prueba_ok !== '1' ? 'Falta probar la conexión con la DGII' : `Conectado a ${cfg.dgii_ambiente} (prueba: ${cfg.dgii_ultima_prueba})` },
+    { id: 'secuencias', titulo: 'Secuencias de comprobantes', ok: seqOk, detalle: modo === 'ninguno' ? 'No aplica' : seqOk ? `Activas: ${requeridas.join(', ')}` : `Revise los rangos ${requeridas.join(', ')}: ${seqs.filter((x) => !x.activo || x.disponibles <= 0 || x.vencida).map((x) => `${x.tipo} ${!x.activo ? 'inactiva' : x.vencida ? 'vencida' : 'agotada'}`).join(', ') || 'faltan tipos'}` },
+    { id: 'impresion', titulo: 'Impresión y caja', ok: cfg.impresora_tipo === 'navegador' || !!cfg.impresora_ip, detalle: cfg.impresora_tipo === 'red' ? (cfg.impresora_ip ? `Impresora de red ${cfg.impresora_ip}:${cfg.impresora_puerto}` : 'Falta la IP de la impresora') : 'Impresión desde el navegador' },
+    { id: 'usuarios', titulo: 'Usuarios y seguridad', ok: !adminClaveDefecto, detalle: adminClaveDefecto ? 'El usuario admin todavía usa la contraseña inicial' : `${usuarios} usuario(s) activo(s)` },
+  ];
+  const listos = pasos.filter((p) => p.ok).length;
+  return { modo, ambiente: cfg.dgii_ambiente, pasos, listos, total: pasos.length, listo: listos === pasos.length, completada: cfg.config_completada === '1', paso_actual: Number(cfg.config_paso) || 0, certificado: cert ? { subject: cert.subject, vence: cert.notAfter, vigente: cert.notAfter > new Date() } : null, secuencias: seqs, rnc_valido: rncOk };
+}
+r.get('/configuracion/estado', (req, res) => res.json(estadoConfiguracion()));
+r.post('/configuracion/completar', admin, (req, res) => { setConfig('config_completada', req.body?.completada === false ? '0' : '1'); res.json(estadoConfiguracion()); });
+r.put('/configuracion/paso', admin, (req, res) => { setConfig('config_paso', String(Number(req.body?.paso) || 0)); res.json({ ok: true }); });
 
 // ---------- Usuarios ----------
 r.get('/usuarios', requireRole('administrador', 'supervisor'), (req, res) => res.json(db.prepare('SELECT id, usuario, nombre, rol, activo, creado, (SELECT MAX(fecha) FROM facturas f WHERE f.usuario_id=u.id) ultima_venta FROM usuarios u ORDER BY nombre').all()));
@@ -44,6 +73,7 @@ r.post('/usuarios/cambiar-clave', (req, res) => {
 
 // ---------- Configuración ----------
 const OCULTAS = ['dgii_cert_clave', 'dgii_token', 'dgii_token_expira'];
+r.get('/configuracion/urls', (req, res) => res.json({ ambiente: cliente.ambiente(), hosts: cliente.HOSTS }));
 r.get('/configuracion', (req, res) => {
   const cfg = allConfig();
   for (const k of OCULTAS) delete cfg[k];
@@ -60,10 +90,11 @@ r.put('/configuracion', admin, (req, res) => {
       if (k === 'dgii_cert_clave' && !v) continue;
       setConfig(k, v);
     }
-    if (b.dgii_ambiente !== undefined || b.dgii_cert_clave) { setConfig('dgii_token', ''); setConfig('dgii_token_expira', ''); firma.invalidarCache(); }
+    if (b.dgii_ambiente !== undefined || b.dgii_cert_clave || b.dgii_url_base !== undefined || b.dgii_url_fc !== undefined) { setConfig('dgii_token', ''); setConfig('dgii_token_expira', ''); setConfig('dgii_ultima_prueba_ok', '0'); firma.invalidarCache(); }
   });
+  if (b.negocio_rnc !== undefined && String(b.negocio_rnc).trim() && !validarRNC(b.negocio_rnc)) return res.status(400).json({ error: 'El RNC no es válido (debe tener 9 dígitos y dígito verificador correcto)' });
   tx();
-  res.json({ ok: true });
+  res.json({ ok: true, estado: estadoConfiguracion() });
 });
 r.put('/configuracion/secuencias/:tipo', admin, (req, res) => {
   const { desde, hasta, actual, vence, activo } = req.body || {};
@@ -82,7 +113,7 @@ r.post('/configuracion/certificado', admin, upload.single('certificado'), (req, 
   try {
     const c = firma.cargarCertificado(req.file.filename, clave);
     setConfig('dgii_cert_archivo', req.file.filename); setConfig('dgii_cert_clave', clave); setConfig('dgii_cert_vence', c.notAfter.toISOString());
-    setConfig('dgii_token', ''); firma.invalidarCache();
+    setConfig('dgii_token', ''); setConfig('dgii_ultima_prueba_ok', '0'); firma.invalidarCache();
     res.json({ ok: true, subject: c.subject, vence: c.notAfter });
   } catch (e) {
     try { fs.unlinkSync(req.file.path); } catch { /* ignore */ }
@@ -104,8 +135,15 @@ r.get('/dgii/estado', async (req, res) => {
   res.json({ ambiente: cliente.ambiente(), modo: getConfig('dgii_modo'), certificado: firma.certificadoDisponible(), rnc: getConfig('negocio_rnc'), resumen, servicios });
 });
 r.post('/dgii/probar', admin, async (req, res) => {
-  try { const token = await cliente.obtenerToken(true); res.json({ ok: true, mensaje: `Autenticación exitosa en ${cliente.ambiente()}`, token: token.slice(0, 12) + '…' }); }
-  catch (e) { res.status(400).json({ ok: false, error: e.message }); }
+  const ahora = new Date().toLocaleString('es-DO');
+  try {
+    const token = await cliente.obtenerToken(true);
+    setConfig('dgii_ultima_prueba', ahora); setConfig('dgii_ultima_prueba_ok', '1'); setConfig('dgii_ultima_prueba_msg', `Autenticación exitosa en ${cliente.ambiente()}`);
+    res.json({ ok: true, mensaje: `Autenticación exitosa en ${cliente.ambiente()}`, token: token.slice(0, 12) + '…', fecha: ahora });
+  } catch (e) {
+    setConfig('dgii_ultima_prueba', ahora); setConfig('dgii_ultima_prueba_ok', '0'); setConfig('dgii_ultima_prueba_msg', e.message);
+    res.status(400).json({ ok: false, error: e.message, fecha: ahora });
+  }
 });
 r.post('/dgii/reprocesar', requireRole('administrador', 'supervisor'), async (req, res) => {
   try { res.json(await dgii.reprocesarPendientes(Number(req.body?.limite) || 20)); } catch (e) { res.status(500).json({ error: e.message }); }

@@ -88,6 +88,9 @@ function run() {
   setConfig('negocio_rnc', '131793916');
   setConfig('negocio_direccion', 'Calle Duarte #45, Villa Mella, Santo Domingo Norte');
   setConfig('negocio_telefono', '(809) 555-0147');
+  setConfig('dgii_envio_automatico', '1');
+  setConfig('config_completada', '0'); setConfig('config_paso', '0');
+  setConfig('dgii_ultima_prueba', ''); setConfig('dgii_ultima_prueba_ok', ''); setConfig('dgii_ultima_prueba_msg', '');
 
   // Usuarios
   const insU = db.prepare('INSERT OR IGNORE INTO usuarios(usuario,nombre,clave_hash,rol) VALUES(?,?,?,?)');

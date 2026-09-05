@@ -4,6 +4,8 @@ window.Pages.dashboard = {
   async render(root) {
     const { esc, money, num, fechaCorta } = ui;
     const d = await api.get('/api/dashboard');
+    const est = window.APP.user.rol === 'administrador' ? await api.get('/api/configuracion/estado').catch(() => null) : null;
+    const aviso = est && !est.listo ? `<div class="setup-banner"><span class="sb-icon">${icon('settings', 20)}</span><div><b>Configuración pendiente (${est.listos} de ${est.total} pasos listos).</b> <span class="muted">${esc(est.pasos.filter((p) => !p.ok).map((p) => p.titulo).join(' · '))}</span></div><a class="btn btn-primary btn-sm" href="#/asistente">Completar configuración ${icon('chevron-right', 14)}</a></div>` : '';
     const delta = (v, warm) => {
       const up = v >= 0;
       const cls = up ? (warm ? 'warm' : 'up') : 'down';
@@ -48,7 +50,7 @@ window.Pages.dashboard = {
       return s + '</svg>';
     };
 
-    root.innerHTML = `
+    root.innerHTML = `${aviso}
       <div class="dash-toolbar"><span class="date-pill">${icon('calendar', 18)}<span>${esc(d.fecha.texto)}</span>${icon('chevron-down', 16)}</span></div>
       <div class="stats">
         <div class="stat"><span class="stat-icon blue">${icon('dollar')}</span><div><div class="stat-label">Ventas de hoy</div><div class="stat-value">${money(d.ventas_hoy.total)}</div>${delta(d.ventas_hoy.variacion)} vs ayer</div></div></div>
